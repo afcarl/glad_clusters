@@ -251,7 +251,13 @@ def _update_concave(conn, pg_schema, pg_table, concave, commit=False):
 
     sql = """
     UPDATE {0}.{1}
-        SET concave = ST_ConcaveHull(ST_Force2D(multipoint), {2});
+        SET concave = 
+        CASE 
+            WHEN ST_GeometryType(ST_ConcaveHull(ST_Force2D(multipoint), {2})) != 'ST_Polygon' THEN
+                St_Buffer(ST_ConcaveHull(ST_Force2D(multipoint), {2})::geography, 15)::geometry
+            ELSE
+                ST_ConcaveHull(ST_Force2D(multipoint), {2})
+            END;
     """.format(pg_schema, pg_table, concave/100)
     cur.execute(sql)
 
